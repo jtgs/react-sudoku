@@ -4,13 +4,13 @@ import React from 'react';
 function Square(props) {
   let classname = "square";
 
-  if (props.selected) {
+  if (props.cell.selected) {
     classname += " selected";
-  } else if (props.highlighted) {
+  } else if (props.cell.highlighted) {
     classname += " highlighted";
   }
 
-  if (props.fixed) {
+  if (props.cell.fixed) {
     classname += " fixed";
   }
   return (
@@ -21,7 +21,7 @@ function Square(props) {
       // tabIndex ensures onKeyPress works
       tabIndex="0"
     >
-      {props.value}
+      {props.cell.value !== 0 ? props.cell.value : ''}
     </td>
   );
 }
@@ -142,11 +142,7 @@ class SudokuApp extends React.Component {
   }
 
   renderSquare(cell) {
-    if (cell.value !== 0) {
-      return <Square key={cell.index} value={cell.value} selected={cell.selected} highlighted={cell.highlighted} fixed={cell.fixed} index={cell.index} onClick={() => this.handleClick(cell.index)} onKeyPress={(e) => this.handleKeyPress(e, cell.index)} />;
-    } else {
-      return <Square key={cell.index} selected={cell.selected} highlighted={cell.highlighted} fixed={cell.fixed} index={cell.index} onClick={() => this.handleClick(cell.index)} onKeyPress={(e) => this.handleKeyPress(e, cell.index)} />;
-    }
+    return <Square key={cell.index} cell={cell} onClick={() => this.handleClick(cell.index)} onKeyPress={(e) => this.handleKeyPress(e, cell.index)} />;
   }
 
   render(){
