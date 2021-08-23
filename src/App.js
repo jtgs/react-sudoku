@@ -15,6 +15,11 @@ function Square(props) {
   } else if (props.cell.fixed) {
     classname += " fixed";
   }
+
+  if (props.cell.value === 0 && props.cell.notes !== '') {
+    classname += " notes";
+  }
+
   return (
     <td 
       className={classname} 
@@ -24,7 +29,7 @@ function Square(props) {
       tabIndex="0"
       id={"cell" + props.cell.index} 
     >
-      {props.cell.value !== 0 ? props.cell.value : ''}
+      {props.cell.value !== 0 ? props.cell.value : props.cell.notes !== '' ? props.cell.notes : ''}
     </td>
   );
 }
@@ -32,6 +37,7 @@ function Square(props) {
 function Cell(index, value) {
   this.index = index;
   this.value = value;
+  this.notes = '';
   this.selected = false;
   this.highlighted = false;
   this.fixed = false;
@@ -115,9 +121,29 @@ function solve(puzzle) {
   return thePuzzle;
 }
 
+function setNotes(cell, digit) {
+  let digitstr = String(digit);
+
+  if (digit === 0) {
+    // Entering 0 in notes mode should clear the notes
+    cell.notes = '';
+    return;
+  } 
+
+  if (cell.notes.includes(digitstr)) {
+    // Remove
+    cell.notes = cell.notes.replace(digitstr, '');
+  } else {
+    // Add
+    cell.notes += digitstr;
+    cell.notes = cell.notes.split('').sort().join('');
+  }
+}
+
 class SudokuApp extends React.Component {
   setupGame() {
     const board = puzzleToBoard(puzzle);
+    this.setState({notesMode: false});
     this.setState({ board });
 
     const solved = solve(puzzle);
@@ -227,12 +253,21 @@ class SudokuApp extends React.Component {
       
       let digit = keycode - 48; 
       if (digit < 0) digit = 0;
-      cell.value = digit;
-      cell.wrong = false;
+
+      if (this.state.notesMode) {
+        cell = setNotes(cell, digit);
+      } else {
+        cell.value = digit;
+        cell.wrong = false;
+      }
       this.setState({ board });
 
       // Now check for errors
       this.checkCell(index);
+    }
+    else if (keycode === 78) {
+      // 78: N key - toggle notes mode
+      this.setState({ notesMode: !this.state.notesMode });
     }
     else {
       return;
@@ -263,6 +298,9 @@ class SudokuApp extends React.Component {
               })
             }
           </tbody></table>
+          <div>
+            <span>Notes <b>{this.state.notesMode ? 'On' : 'Off'}</b> - press N to toggle</span>
+          </div>
         </div>
       );
     } else {
