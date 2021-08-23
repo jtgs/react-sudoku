@@ -10,7 +10,9 @@ function Square(props) {
     classname += " highlighted";
   }
 
-  if (props.cell.fixed) {
+  if (props.cell.wrong) {
+    classname += " wrong";
+  } else if (props.cell.fixed) {
     classname += " fixed";
   }
   return (
@@ -33,18 +35,19 @@ function Cell(index, value) {
   this.selected = false;
   this.highlighted = false;
   this.fixed = false;
+  this.wrong = false;
 }
 
 const puzzle = [
-  [2, 0, 3, 0, 0, 8, 6, 0, 7],
-  [1, 4, 0, 7, 2, 6, 0, 0, 9],
-  [5, 0, 7, 1, 3, 9, 4, 2, 8],
-  [0, 2, 5, 0, 8, 1, 9, 0, 4],
-  [4, 1, 0, 9, 0, 3, 2, 0, 5],
-  [0, 7, 9, 2, 0, 5, 0, 3, 6],
-  [6, 0, 2, 0, 1, 0, 0, 9, 3],
-  [7, 0, 0, 5, 0, 2, 0, 0, 1],
-  [0, 8, 1, 3, 6, 7, 0, 4, 0]
+  [5, 3, 0, 0, 7, 0, 0, 0, 0],
+  [6, 0, 0, 1, 9, 5, 0, 0, 0],
+  [0, 9, 8, 0, 0, 0, 0, 6, 0],
+  [8, 0, 0, 0, 6, 0, 0, 0, 3],
+  [4, 0, 0, 8, 0, 3, 0, 0, 1],
+  [7, 0, 0, 0, 2, 0, 0, 0, 6],
+  [0, 6, 0, 0, 0, 0, 2, 8, 0],
+  [0, 0, 0, 4, 1, 9, 0, 0, 5],
+  [0, 0, 0, 0, 8, 0, 0, 7, 9]
 ];
 
 function puzzleToBoard(puzzle) {
@@ -67,14 +70,77 @@ function puzzleToBoard(puzzle) {
   return board;
 }
 
+// Returns true if n could possibly go in the cell at row/col.
+function possible(puzzle, row, col, n) {
+  // Check the row
+  for (let i = 0; i < 9; i++) {
+    if (puzzle[row][i] === n) return false;
+  }
+
+  // Check the column
+  for (let j = 0; j < 9; j++) {
+    if (puzzle[j][col] === n) return false;
+  }
+
+  // Define top-left of the 3x3 box
+  let y0 = Math.floor(row / 3) * 3;
+  let x0 = Math.floor(col / 3) * 3;
+
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (puzzle[y0 + i][x0 + j] === n) return false;
+    }
+  }
+
+  return true;
+}
+
+function solve(puzzle) {
+  let thePuzzle = puzzle.slice();
+
+  for (let y = 0; y < 9; y++) {
+    for (let x = 0; x < 9; x++) {
+      if (thePuzzle[y][x] === 0) {
+        for (let n = 1; n < 10; n++) {
+          if (possible(thePuzzle, y, x, n)) {
+            thePuzzle[y][x] = n;
+            if (solve(thePuzzle)) return thePuzzle;
+            thePuzzle[y][x] = 0;
+          }
+        }
+        return false;
+      }
+    }
+  }
+  return thePuzzle;
+}
+
 class SudokuApp extends React.Component {
   setupGame() {
     const board = puzzleToBoard(puzzle);
     this.setState({ board });
+
+    const solved = solve(puzzle);
+    this.solution = solved;
   }
 
   componentDidMount() {
     this.setupGame();
+  }
+
+  checkCell(index) {
+    let board = this.state.board.slice();
+    let theRow = Math.floor(index / 9);
+    let theCol = index % 9;
+    let cell = board[theRow][theCol];
+
+    console.log(cell);
+
+    if (cell.value !== 0 && cell.value !== this.solution[theRow][theCol]) {
+      cell.wrong = true;
+    }
+
+    this.setState({ board });
   }
 
   handleClick(ii) {
@@ -162,7 +228,11 @@ class SudokuApp extends React.Component {
       let digit = keycode - 48; 
       if (digit < 0) digit = 0;
       cell.value = digit;
+      cell.wrong = false;
       this.setState({ board });
+
+      // Now check for errors
+      this.checkCell(index);
     }
     else {
       return;
@@ -174,7 +244,6 @@ class SudokuApp extends React.Component {
   }
 
   render(){
-    console.log(this.state);
     let ix = 0;
     if (this.state && this.state.board) {
       return (
