@@ -44,3 +44,7 @@
   font-size: 1.5em;
   font-style: italic;
 }
+
+.complete {
+  background: rgb(126, 189, 134);
+}

@@ -4,7 +4,9 @@ import React from 'react';
 function Square(props) {
   let classname = "square";
 
-  if (props.cell.selected) {
+  if (props.complete) {
+    classname += " complete";
+  } else if (props.cell.selected) {
     classname += " selected";
   } else if (props.cell.highlighted) {
     classname += " highlighted";
@@ -143,7 +145,7 @@ function setNotes(cell, digit) {
 class SudokuApp extends React.Component {
   setupGame() {
     const board = puzzleToBoard(puzzle);
-    this.setState({notesMode: false});
+    this.setState({ notesMode: false, complete:false });
     this.setState({ board });
 
     const solved = solve(puzzle);
@@ -167,9 +169,26 @@ class SudokuApp extends React.Component {
     }
 
     this.setState({ board });
+
+    this.checkBoard();
+  }
+
+  checkBoard() {
+    let board = this.state.board.slice();
+
+    for (let row of board) {
+      for (let cell of row) {
+        if (cell.value === 0) return;
+        if (cell.wrong) return;
+      }
+    }
+
+    this.setState({ complete: true });
   }
 
   handleClick(ii) {
+    if (this.state.complete) return;
+
     let theRow = Math.floor(ii / 9);
     let theCol = ii % 9;
 
@@ -211,6 +230,8 @@ class SudokuApp extends React.Component {
 
   handleKeyDown(event, index) {
     console.log("cell #" + index + ", keycode " + event.keyCode);
+
+    if (this.state.complete) return;
 
     let board = this.state.board.slice();
     let theRow = Math.floor(index / 9);
@@ -274,8 +295,20 @@ class SudokuApp extends React.Component {
     }
   }
 
-  renderSquare(cell) {
-    return <Square key={cell.index} cell={cell} onClick={() => this.handleClick(cell.index)} onKeyDown={(e) => this.handleKeyDown(e, cell.index)} />;
+  renderSquare(cell, complete) {
+    return <Square key={cell.index} cell={cell} complete={complete} onClick={() => this.handleClick(cell.index)} onKeyDown={(e) => this.handleKeyDown(e, cell.index)} />;
+  }
+
+  completeBoard() {
+    let board = this.state.board.slice();
+
+    for (let y = 0; y < 9; y++) {
+      for (let x = 0; x < 9; x++) {
+        board[y][x].value = this.solution[y][x];
+      }
+    }
+
+    this.setState({ board });
   }
 
   render(){
@@ -290,7 +323,7 @@ class SudokuApp extends React.Component {
                   <tr key={ix++}>
                     { 
                       row.map((cell) => {
-                        return this.renderSquare(cell);
+                        return this.renderSquare(cell, this.state.complete);
                       })
                     }
                   </tr>
@@ -301,6 +334,9 @@ class SudokuApp extends React.Component {
           <div>
             <span>Notes <b>{this.state.notesMode ? 'On' : 'Off'}</b> - press N to toggle</span>
           </div>
+          {/* <div>
+            <button onClick={() => this.completeBoard()}>Complete</button>
+          </div> */}
         </div>
       );
     } else {
