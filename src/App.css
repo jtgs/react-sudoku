@@ -41,8 +41,17 @@
 }
 
 .notes {
-  font-size: 1.5em;
+  font-size: 1.2em;
   font-style: italic;
+  text-align: left;
+  line-height: 1.3em;
+  vertical-align: top;
+  padding: 0 0.2em 0 0.2em;
+  font-weight: normal;
+}
+
+.notes.selected {
+  font-weight: bold;
 }
 
 .complete {
